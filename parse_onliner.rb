@@ -1,7 +1,3 @@
-# Достаем все новости со странички. Сохраняем в csv документ
-# (название новости, ссылку на картинку, первые 200 символов текста)
-# Включить или выключить программу чтения с экрана
-
 require 'capybara'
 require 'csv'
 class ParseOnliner
@@ -30,10 +26,9 @@ class ParseOnliner
   end
 
   def get_links(reg_main_links)
-    p link = @browser.all('a').map { |a| a['href'] }
+    @browser.all('a').map { |a| a['href'] }
     .select { |a| a if(reg_main_links.match(a) && !(/\#/.match(a))) }
     .uniq!
-    link
   end
 
   def set_csv_file(file)
@@ -43,24 +38,18 @@ class ParseOnliner
   end
 
   def collect_information(links, csv_file)
-    p csv_file
     CSV.open("#{csv_file}", "wb") do |csv|
       csv << ["title", "image", "description"]
       links.each do |link|
         @browser.visit(link)
-
         title = @browser.first('.news-header__title div').text
-        p title
-
         image = @browser.first('.news-header__image')
                 .native.css_value('background-image')
                 .match(/https:\/\/\w*.onliner.by\/\S*.jpeg/i).to_s
-        p image
-
         all_text = ''
         p_tags = @browser.all('p')
         p_tags.each { |p_tag| all_text << p_tag.text }
-        p description = all_text[0..196] + '...'
+        description = all_text[0..196] + '...'
         inf = [title, image, description]
         csv << inf
       end
