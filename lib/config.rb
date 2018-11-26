@@ -10,7 +10,7 @@ class Configure
   end
   Capybara.javascript_driver = :chrome
   Capybara.configure do |config|
-    config.default_max_wait_time = Random.new.rand(10..15)
+    config.default_max_wait_time = 15
     config.default_driver = :selenium
   end
 end

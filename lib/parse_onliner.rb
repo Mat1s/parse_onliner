@@ -1,5 +1,4 @@
 require 'capybara'
-require 'csv'
 require_relative 'config'
 
 class ParseOnliner
@@ -7,15 +6,13 @@ class ParseOnliner
 
   def initialize
     Configure.new
-    @file = 'results/default.csv'
     @browser = Capybara.current_session
   end
 
   def process_data
-    csv_file = change_csv(@file)
     @browser.visit 'https://www.onliner.by/'
     links = links(REG_LINK)
-    collect_information(links, csv_file)
+    collect_information(links)
   end  
 
   def resize_window_by(size)
@@ -24,22 +21,17 @@ class ParseOnliner
     driver.browser.respond_to? 'manage'
   end
 
-  def links(reg_main_links)
+  def links(reg_links)
     @browser.all('a').map { |a| a['href'] }
-    .select { |a| a if(reg_main_links.match(a) && !(/\#/.match(a))) }
+    .select { |a| a if(reg_links.match(a) && !(/\#/.match(a))) }
     .uniq!
   end
 
-  def change_csv(file)
-    puts 'Tape new file name >>'
-    f = gets.chomp 
-    f != '' ? 'results/' + f : file
-  end
-
-  def collect_information(links, csv_file)
-    CSV.open("#{csv_file}", "wb") do |csv|
-      csv << ["title", "image", "description"]
-      links.each do |link|
+  def collect_information(links)
+    output = []
+    links.each do |link|
+      times_retried = 0
+      begin
         @browser.visit(link)
         title = @browser.first('.news-header__title div').text
         image = @browser.first('.news-header__image')
@@ -47,13 +39,21 @@ class ParseOnliner
                 .match(/https:\/\/\w*.onliner.by\/\S*.jpeg/i).to_s
         all_text = ''
         p_tags = @browser.all('p')
-        p_tags.each { |p_tag| all_text << p_tag.text }
+        p_tags.each { |p_tag| all_text << p_tag.text; break if all_text.length > 196 }
         description = all_text[0..196] + '...'
         inf = [title, image, description]
-        csv << inf
+        p inf
+        output << inf
+      rescue Net::ReadTimeout => error
+        if times_retried < 2
+          times_retried += 1
+          retry
+        else
+          links.push(link)
+          next
+        end
       end
     end
+    output
   end
 end
-
-
