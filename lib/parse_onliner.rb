@@ -3,7 +3,6 @@ require_relative 'config'
 
 class ParseOnliner
   REG_LINK = /https:\/\/\w*.onliner.by\/\d{4}\/\d{2}\/\d{2}\/\S*/i
-
   def initialize
     Configure.new
     @browser = Capybara.current_session
@@ -30,29 +29,18 @@ class ParseOnliner
   def collect_information(links)
     output = []
     links.each do |link|
-      times_retried = 0
-      begin
-        @browser.visit(link)
-        title = @browser.first('.news-header__title div').text
-        image = @browser.first('.news-header__image')
-                .native.css_value('background-image')
-                .match(/https:\/\/\w*.onliner.by\/\S*.jpeg/i).to_s
-        all_text = ''
-        p_tags = @browser.all('p')
-        p_tags.each { |p_tag| all_text << p_tag.text; break if all_text.length > 196 }
-        description = all_text[0..196] + '...'
-        inf = [title, image, description]
-        p inf
-        output << inf
-      rescue Net::ReadTimeout => error
-        if times_retried < 2
-          times_retried += 1
-          retry
-        else
-          links.push(link)
-          next
-        end
-      end
+      @browser.visit(link)
+      title = @browser.first('.news-header__title div').text
+      image = @browser.first('.news-header__image')
+              .native.css_value('background-image')
+              .match(/https:\/\/\w*.onliner.by\/\S*.jpeg/i).to_s
+      all_text = ''
+      p_tags = @browser.all('p')
+      p_tags.each { |p_tag| all_text << p_tag.text; break if all_text.length > 196 }
+      description = all_text[0..196] + '...'
+      inf = [title, image, description]
+      p inf
+      output << inf
     end
     output
   end

@@ -6,7 +6,7 @@ class CSVOutput
     @results = results
   end
 
-  def change_csv(file)
+  def change_csv
     puts 'Tape new file name >>'
     f = gets.chomp 
     @file = f if f =~ /\S*.csv/i && f != ''
