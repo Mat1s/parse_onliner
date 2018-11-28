@@ -8,13 +8,13 @@ class CSVOutput
 
   def change_csv
     puts 'Tape new file name >>'
-    f = gets.chomp 
+    f = gets.chomp
     @file = f if f =~ /\S*.csv/i && f != ''
   end
 
   def output_information
-    CSV.open("#{@file}", "wb") do |csv|
-      csv << ["title", "image", "description"]
+    CSV.open(@file.to_s, 'wb') do |csv|
+      csv << ['title', 'image', 'description']
       @results.each { |line| csv << line }
     end
   end
