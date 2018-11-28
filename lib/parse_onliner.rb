@@ -23,25 +23,33 @@ class ParseOnliner
   def links(reg_links)
     @browser.all('a').map { |a| a['href'] }
     .select { |a| a if(reg_links.match(a) && !(/\#/.match(a))) }
-    .uniq!
+    .uniq!.sort!
   end
 
   def collect_information(links)
     output = []
     links.each do |link|
-      @browser.visit(link)
-      title = @browser.first('.news-header__title div').text
-      image = @browser.first('.news-header__image')
-              .native.css_value('background-image')
-              .match(/https:\/\/\w*.onliner.by\/\S*.jpeg/i).to_s
-      all_text = ''
-      p_tags = @browser.all('p')
-      p_tags.each { |p_tag| all_text << p_tag.text; break if all_text.length > 196 }
-      description = all_text[0..196] + '...'
-      inf = [title, image, description]
-      p inf
-      output << inf
+      begin
+        @browser.visit(link)
+        puts @browser.current_url 
+        title = @browser.first('.news-header__title div').text
+        image = @browser.first('.news-header__image')
+                .native.css_value('background-image')
+                .match(/https:\/\/\w*.onliner.by\/\S*.jpeg/i).to_s
+        all_text = ''
+        p_tags = @browser.all('p')
+        full_p = p_tags.each { |p_tag| all_text << p_tag.text; break if all_text.length > 196 }
+        description = all_text[0..196] + '...'
+        inf = [title, image, description]
+        output << inf
+      rescue Net::ReadTimeout => e 
+        p e.message
+        @browser.driver.quit
+        sleep 5
+        retry
+      end
     end
     output
   end
 end
+
